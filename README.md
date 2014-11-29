@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 Node.js_UserLogin_Template
 ==========================
 
@@ -22,3 +23,9 @@ This is Node.js Login Template with a nice User Interface. If you want to use No
 1.  Run <code>npm install</code>
 1.  Run <code>node app</code>
 1.  Go to http://localhost:8080/
+=======
+IrsindChat_v0.0.1
+=================
+
+Chat Using Node.js and mongodb
+>>>>>>> d9c659dbc7876461027ffebad7e4b389881b1ca0
