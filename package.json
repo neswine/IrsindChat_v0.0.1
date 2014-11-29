@@ -1,0 +1,19 @@
+{
+  "name": "IrisindChat",
+  "description": "A chat Application in node.js and mongodb",
+  "version": "0.0.1",
+  "main": "server.js",
+  "dependencies": {
+    "async": "latest",
+    "bcrypt-nodejs": "latest",
+    "connect-flash": "0.1.1",
+    "ejs": "0.8.5",
+    "express": "3.4.8",
+    "mongoose": "3.8.8",
+    "now": ">=0.0.1",
+    "opentok": "^2.2.4",
+    "passport": "0.2.0",
+    "passport-local": "0.1.6",
+    "socket.io": "latest"
+  }
+}

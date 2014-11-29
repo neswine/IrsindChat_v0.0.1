@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+<%include header.html %>
+</head>
+<body>
+Online Friends
+<div id="connected"></div>
+<div id="PrivateTab">    </div></body>
+<script src="/socket.io/socket.io.js"></script>
+<script src="http://code.jquery.com/jquery-latest.min.js"></script>
+<link rel="stylesheet" href="//code.jquery.com/ui/1.11.1/themes/smoothness/jquery-ui.css">
+<script src="//code.jquery.com/jquery-1.10.2.js"></script>
+<script src="//code.jquery.com/ui/1.11.1/jquery-ui.js"></script>
+<script>
+    
+	var socket = io.connect();
+	
+	socket.on('connect', function(){	
+		socket.emit('names' , "<%= user.user.firstname %>");	
+	});
+	
+	socket.on('connected', function(usernames, data){
+		$('#connected').empty();
+		$.each(usernames, function(key, value){
+			if(value == data){
+				$('#connected').append('<div>' + value + '</div>');			
+			} else {
+				$('#connected').append('<div id="changename"><a href="#" onclick="switchName(\''+ value + '\')">' + value +'</a></div><br>');	
+				socket.emit('new' ,value);
+			}
+		});	
+	});
+
+	function switchName(key){
+		//socket.emit('switchName', data);
+		var wId= "to_"+key;
+         	var privateDiv = document.getElementById('PrivateTab');
+                var privateBox = document.createElement('div');
+ 
+		var privateTitle = document.createElement('div');
+  		$(privateTitle).attr({
+   			'style': 'background-color: #000; color: white;',
+  		});
+  		$(privateTitle).append("Private: "+ key);
+  		privateBox.appendChild(privateTitle);
+		
+  
+  		var privateChat = document.createElement('div');
+  		$(privateChat).attr({
+	   		'id': wId + "_text"
+		  });
+  		privateBox.appendChild(privateChat);
+  
+ 		 var privateBreak = document.createElement('br');
+  		privateBox.appendChild(privateBreak);
+  
+  		var privateText = document.createElement('input');
+  		$(privateText).attr({
+   			'id': wId + "_data",
+   			'type': "text"
+  		});
+  		privateBox.appendChild(privateText);
+  
+  		var privateSend = document.createElement('input');
+  		$(privateSend).attr({
+   			'id': wId + "_send",
+   			'type': "button",
+   			'value': "Send"
+  		});
+  		privateBox.appendChild(privateSend);
+  
+  		$(privateBox).attr({
+   			'id': wId,
+   			'style': 'float: right; width: 220px; height: 200px; overflow-x: auto; border-radius: 6px; border: 1px #BBB solid;'
+  		});
+               privateDiv.appendChild(privateBox);
+  
+  	       $(privateSend).click(function(){
+   			 var messagetosend = $('#to_'+key+"_data").val();
+  			$('#to_'+key+"_text").append("<div><b>Me: </b>" + messagetosend + "</div>");
+  			socket.emit('sendprivatechat', key, messagetosend);
+    	       });
+	}
+
+	socket.on('getprivatemsg', function(sender, key, message) {
+  		var elem = document.getElementById('to_'+sender+"_text");
+  		if(typeof(elem) != 'undefined' && elem != null){
+   
+  		}else{
+   			switchName(sender);
+  		}
+		$(elem).fadeOut(800).fadeIn(800).fadeOut(400).fadeIn(400).fadeOut(400).fadeIn(400);
+  		var elem = document.getElementById('to_'+sender+"_text");
+  		$(elem).append('<div>' + message + '</div>');
+        });
+	
+</script>
+</body>
+</html>

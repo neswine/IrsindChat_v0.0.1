@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<style>
+		body {
+    			background-color: #000000;
+		}		
+	
+		#their{
+			position:relative;
+    			width:200px; 
+			height:305px;
+			     		
+		}
+
+		#my-video{
+			position:relative;       
+     			width:30%;       
+     			border:2px solid blue;
+     			display:block;
+     			z-index:1;  	
+		}
+		
+		#videochat-tab {
+   			 top: 30%;
+    			left: 50%;
+    			width:30em;
+    			height:27em;
+    			margin-top: -9em; /*set to a negative number 1/2 of your height*/
+    			margin-left: -15em; /*set to a negative number 1/2 of your width*/
+    			border: 1px solid #ccc;
+    			background-color: #f3f3f3;
+    			position:fixed;
+			display:none;
+		}
+
+		#down-div a img:hover{
+				 -moz-transform:rotate(-5deg); -moz-box-shadow:10px 10px 20px #000000;
+  			-webkit-transform:rotate(-5deg); -webkit-box-shadow:10px 10px 20px #000000;
+  			transform:rotate(-5deg); box-shadow:10px 10px 20px #000000;	
+		}
+
+		#list ul { 
+			list-style:none; 
+		}
+
+		#list8 {  }
+
+		#list8 ul { 
+			list-style:none; 
+		}
+		
+		#list8 ul li { 
+font-family:Georgia,serif,Times; font-size:18px; }
+		#list8 ul li a { display:block; width:200px; height:28px; background-color:#333; border-left:5px solid #222; border-right:5px solid #222; padding-left:10px;text-decoration:none; color:#bfe1f1; }
+		#list8 ul li a:hover {  -moz-transform:rotate(-5deg); -moz-box-shadow:10px 10px 20px #000000;
+  			-webkit-transform:rotate(-5deg); -webkit-box-shadow:10px 10px 20px #000000;
+  			transform:rotate(-5deg); box-shadow:10px 10px 20px #000000; }		
+
+	</style>
+	<meta charset="utf-8">
+	<meta name="description" content="">
+		<title>Knoldus Login Form</title>
+	<link href="css/bootstrap.min.css" rel="stylesheet">
+	
+	
+ 	
+	<script src = "/js/jquery-1.10.2.js"></script>
+  	
+	<script src="/socket.io/socket.io.js"></script>
+	<script type="text/javascript" src="http://cdn.peerjs.com/0.3/peer.min.js"></script>
+	<script>
+	
+		var peer = new Peer({ key: 'lwjd5qra8257b9', debug: 3});
+		//var peer = new Peer({ key: 'lwjd5qra8257b9', debug: 3});
+ 		var friendlist ={};
+		//connect to the port 8080
+  		var socket = io.connect('http://localhost:8080');
+		//sends the first name of the user that has to searched
+  		socket.on('connect', function(){
+			<% for(var i=0; i<friendss.length; i++) { %>
+				$('#pending-requests').append('<div id="add_friend">'+"<%= friendss[i] %>"+' has requested you to add.            <a href="/profile1" onclick="add_request(\''+ "<%= friendss[i] %>" +'\',\''+ "<%= user._id %>" +'\',\''+ "<%= user.user.firstname %>" +'\')">Add</a>                     <a href="#" onclick="delete_request(\''+ "<%= friendss[i] %>" +'\')">Cancel</a></div><br>');			
+			<% } %>
+			socket.emit('adduserr', "<%= user.user.firstname %>","<%= user._id %>");
+			//stores the value of friends list of the corresponding user into the hash friendlist
+			<% for(var i=0; i<friends.length; i++) { %>
+				var str ="<%= friends[i] %>"
+				friendlist[str] = str
+			<% } %>
+  		});
+
+		function add_request(friendname,userid, username){
+			socket.emit('add new friend', friendname, userid, username);
+			$('#add_friend').fadeOut(800);	
+		}
+			
+		function delete_request(friendname){
+			socket.emit('delete request', friendname,"<%= user._id %>","<%= user.user.firstname %>");
+			//$('#cancel_request').fadeOut(800);		
+		}	
+
+		//update the friends list after adding him
+  		socket.on('updateuserrs', function(data) {
+  			$('#users').empty();
+			var html = '<h2>Friend List</h2> <ul><% for(var i=0; i<friends.length; i++) { %><li><a style="font-family:Funk" href="#" >'
+    			$.each(data, function(key, value) {
+				var str = "<%= friends[i] %>";
+				if(key =="<%= friends[i] %>") {
+					if(html.indexOf(str) != -1){
+						html += ''
+					}else{
+						html += '<%= friends[i] %>'
+					}	
+   				}else{
+					if(html.indexOf(str) != -1){
+						html += ''
+					}else{
+						html += '<%= friends[i] %>'
+					}	
+				}
+			});
+			html +=  '</a></li><% } %> </ul>'
+			$('#users').append(html)
+  		});
+
+		jQuery.browser = {};
+		(function () {
+    			jQuery.browser.msie = false;
+    			jQuery.browser.version = 0;
+    			if (navigator.userAgent.match(/MSIE ([0-9]+)\./)) {
+        			jQuery.browser.msie = true;
+        			jQuery.browser.version = RegExp.$1;
+    			}
+		})();
+		
+		//for auto-complete search function
+		$(function () {
+  			$("#search-query").autocomplete({
+     				source: function (request, response) {
+         				$.ajax({
+           					url: "/search_member",
+            					type: "GET",
+            					data: request,  // request is the value of search input
+            					success: function (data) {
+              					// Map response values to fiedl label and value
+               						response($.map(data, function (el) {
+								socket.emit('search result', el.user.firstname,el.user.address);
+                  						return {
+                     							label: el.user.firstname+', '+el.user.address,
+                    							value: el._id
+                  						};
+                  					}));
+					}
+               				});
+            				
+         			},
+         
+         	// The minimum number of characters a user must type before a search is performed.
+         	minLength: 3, 
+         
+         	// set an onFocus event to show the result on input field when result is focused
+         	focus: function (event, ui) { 
+            		this.value = ui.item.label; 
+            	// Prevent other event from not being execute
+            		event.preventDefault();
+         	},
+         	select: function (event, ui) {
+            		// Prevent value from being put in the input:
+            		this.value = ui.item.label;
+            		// Set the id to the next input hidden field
+            		$(this).next("input").val(ui.item.value); 
+            		// Prevent other event from not being execute            
+            		event.preventDefault();
+            		// optionnal: submit the form after field has been filled up
+            		$('#quicksearch').submit();
+         	}
+	});
+
+	$('#search-query').keypress(function(e){
+		$('#search_result').empty();	
+	});	
+
+	});
+
+	
+
+	var peerid = {};
+	var friendsonline = {};
+	var socket = io.connect();
+
+	socket.on('search result', function(name, add){
+		$('#search_result').append('<div><a id="namerequest">' + name + ', ' + add + '</a>'+ ' &nbsp;    ' +'<a href="#" id="search-result" onclick="friendrequest(\''+name+'\',\''+add+'\')">Add</a></div>'); 	
+	});
+
+	function friendrequest(name, add){
+		socket.emit('friend request',"<%= user._id %>", name, add, "<%= user.user.firstname %>");
+		$('#namerequest').fadeOut(800);
+		$('#search-result').fadeOut(800);	
+	}
+
+	socket.on('friend request', function(friendname, friendadd, username){
+		$('#friendrequest').append('<div id="add_friend">'+ username +' has requested to add you.    <a href="#" id="add" onclick="addrequest(\''+ friendname +'\',\''+ "<%= user._id %>" +'\',\''+ "<%= user.user.firstname %>" +'\')">Add</a><a id="cancel" onclick="deleterequest()">Cancel</a>');	
+	});
+	
+	function addrequest(friendname,userid, username){
+		socket.emit('add new friend', friendname, userid, username);
+		$('#add_friend').fadeOut(800);	
+	}
+	
+	function deleterequest(friendname){
+		socket.emit('delete request', friendname,"<%= user._id %>","<%= user.user.firstname %>");
+		//$('#cancel_request').fadeOut(800);		
+	}
+
+	//sends the first name of the user that logins
+	socket.on('connect', function(){
+		peer.on('open', function(){	
+			socket.emit('names' , "<%= user.user.firstname %>", peer.id);
+		});
+	});
+
+	socket.on('peerid', function(data){
+		$.each(data, function(key, value){
+			peerid[key] = value;
+			//alert(peerid[key]);					
+		});
+	});
+	
+	//shows online friends from his friendlist
+	socket.on('friends', function(data){
+		$('#online').empty();
+		$.each(data, function(key ,value){
+			if(value in friendlist){
+				friendsonline[key] = value;
+				//alert(peerid[friendsonline[key]]);	
+				$('#online').append('<b><a align="left" href="#" onclick="switchName(\''+ friendsonline[key] + '\')">' + friendsonline[key] + '</a>      <a href="#" class="btn btn-info" onclick="nametotextbox(\''+ peerid[friendsonline[key]] +'\')" id="make-call" style="margin-right:.5rem">Video Call</a></b><br>');
+			}	
+		});
+	});
+
+	function nametotextbox(name){
+		$('#videochat-tab').fadeIn(1600);
+		$('#callto-id').val(name);
+       		// Initiate a call!
+       		var call = peer.call($('#callto-id').val(), window.localStream);
+        	step3(call);
+	}
+	
+	// function to generate pop-up and private chat when clicked online friend
+	function switchName(key){
+		var wId= "to_"+key;
+         	var privateDiv = document.getElementById('PrivateTab');
+                var privateBox = document.createElement('div');
+ 
+		var privateTitle = document.createElement('div');
+  		$(privateTitle).attr({
+   			'style': 'background-color: #000; color: white;',
+			'position': 'fixed'
+  		});
+  		$(privateTitle).append("Private: "+ key);
+  		privateBox.appendChild(privateTitle);
+		
+  
+  		var privateChat = document.createElement('div');
+  		$(privateChat).attr({
+	   		'id': wId + "_text"
+		  });
+  		privateBox.appendChild(privateChat);
+  
+ 		var privateBreak = document.createElement('br');
+  		privateBox.appendChild(privateBreak);
+  
+  		var privateText = document.createElement('input');
+  		$(privateText).attr({
+   			'id': wId + "_data",
+   			'type': "text"
+  		});
+  		privateBox.appendChild(privateText);
+  
+  		var privateSend = document.createElement('input');
+  		$(privateSend).attr({
+   			'id': wId + "_send",
+   			'type': "button",
+   			'value': "Send"
+  		});
+  		privateBox.appendChild(privateSend);
+  
+  		$(privateBox).attr({
+   			'id': wId,
+   			'style': 'float: right; width: 220px; height: 200px; overflow-x: auto; border-radius: 6px; border: 1px #BBB solid;',
+  		});
+
+               	privateDiv.appendChild(privateBox);
+  
+  	       	$(privateSend).click(function(){
+   			 var messagetosend = $('#to_'+key+"_data").val();
+  			$('#to_'+key+"_text").append("<div><b>Me: </b>" + messagetosend + "</div>");
+  			socket.emit('sendprivatechat', key, messagetosend);
+    	       });
+	}
+	
+	//function for private message
+	socket.on('getprivatemsg', function(sender, key, message) {
+  		var elem = document.getElementById('to_'+sender+"_text");
+  		if(typeof(elem) != 'undefined' && elem != null){
+   
+  		}else{
+   			switchName(sender);
+  		}
+		$(elem).fadeOut(800).fadeIn(800).fadeOut(400).fadeIn(400).fadeOut(400).fadeIn(400);
+  		var elem = document.getElementById('to_'+sender+"_text");
+  		$(elem).append('<div>' + message + '</div>');
+        });
+</script>
+</head>
+<body>	
+	  <div class="col-md-12 panel panel-default" style="background-color:#0101DF">
+		<div class="col-md-2">		
+		<div class="btn btn-info" style="margin-top:2rem;">
+	  		<a href="/profile1" style="font-family:Funk;float:left; margin-right:2rem">Home</a>
+		</div>
+		</div>
+		<div id="profile1" class="col-md-7">
+				<form action="/friend" method="post" class="box login">
+					<div class="box profile">
+						<fieldset class="">
+							<input type="text" id="search-query" size="55"; style="margin-top:2rem;" >
+							<input type="hidden" id="anotherfriendid" name="anotherfriendid">
+							<input type="hidden" id="mainfriendid" name="mainfriendid" value ="<%= user._id %>">
+							<input type="submit" class="btn btn-primary" value="Add" tabindex="4" >
+						</fieldset>
+					</div>
+				</form>  
+			</div>
+  		<img style="width:4%; margin-left:1rem; psition:fixed" align="right" src="/image.png" name="userimage" id="userimage" alt="..." class="img-thumbnail"></h1>
+		<div class="btn btn-info" style="float:right; margin-top:2rem; margin-right:2rem; psition:fixed">
+      			<a href="/profile" style="font-family:Funk;float:right; margin-right:2rem; psition:fixed "><%= user.user.firstname %>&nbsp<%= user.user.lastname %></a>
+		</div>
+		<div class="btn btn-info" style="float:right; margin-right:2rem; margin-top:2rem;">      
+			<a style="font-family:Funk" href="/logout" >Sign Out</a>
+		</div>
+			
+    	</div>
+	
+
+	<div class="col-md-2" >
+		<a href="/profile">
+		<img width="120px" height="120px" align="centre" src="/image.png" name="userimage" id="userimage" alt="..." class="img-thumbnail">
+	</a>
+			<br><br><br><div id="list">
+			<ul>
+			<li><a style="font-family:Funk" href="/profile1">Home</a></li>
+			</ul>
+			</div>
+			<div id="list">
+			<ul>
+			<li><a style="font-family:Funk" href="/gchat">Room Chat</a></li>
+			</ul>
+			</div>
+			<div id="list">
+			<ul>
+			<li><a style="font-family:Funk" href="/profile">View My Profile</a></li>
+			</ul>
+			</div>
+			<div id="list">
+			<ul>
+			<li><a style="font-family:Funk" href="/videochat">Video Conference</a></li>
+			</ul>
+			</div>
+		
+	</div>
+	<div class="col-md-5">
+		<div class="panel panel-default" id="content" style="overflow-y:scroll; height:500px">   
+			<div align="center" style="margin: 0 auto;">
+				<form id="status" action="">
+					<textarea rows="3" cols="50" id="status-value" placeholder="What do you feel <%= user.user.firstname %>"></textarea>
+					<input type="button" class="btn btn-primary" id="send-status" value="update">
+				</form>		
+			</div>	
+			<div id="statuses"></div>	
+		</div>
+	</div>
+	<div class="col-md-3">
+		<div id="pending-requests"></div>
+		<div id="search_result"></div>
+		<div id="friendrequest"></div>
+		<div id="status-notification"></div>
+	</div>
+	<div class="col-md-2 panel panel-default" style="height:550px">
+		<div style="">
+			<h3 style="font-family:Funk"> Chats </h3>
+			<div id="online"></div>
+		</div>
+		<div id="profile1">
+				<div class="box reminder" id="users"></div>
+			</div>
+	</div>
+	<div id="PrivateTab" >    </div>
+
+	<div id="videochat-tab">
+		<div class="panel panel-default" style="overflow-y:scroll; ">
+		<a href="#" id="closebtn" style="position:relative; align:left;" >x</a>
+			<ul id="con"></ul>
+  			<div class="pure-g">
+
+      			<!-- Video area -->
+      				<div class="pure-u-2-3" id="video-container">
+					<div id="their">
+        				<video id="their-video" autoplay></video>
+					</div>
+					<div id="my">
+        				<video id="my-video" muted="true" autoplay></video>
+					</div>
+      				</div>
+
+      				<!-- Steps -->
+      				<div class="pure-u-1-3">
+
+        			<!-- Get local audio/video stream -->
+        				<div id="step1">
+          					<p>Please click `allow` on the top of the screen so we can access your webcam and microphone for calls.</p>
+          					<div id="step1-error">
+            						<p>Failed to access the webcam and microphone. Make sure to run this demo on an http server and click allow when asked for permission by the browser.</p>
+            						<a href="#" class="pure-button pure-button-error" id="step1-retry">Try again</a>
+          					</div>
+        				</div>
+
+        				<!-- Make calls to others -->
+        				<div id="step2">
+          					<div class="pure-form">
+            						<input type="hidden" placeholder="Call user id..." id="callto-id">
+           						<!-- <a href="#" class="pure-button pure-button-success" id="make-call">Call</a>-->
+          					</div>
+        				</div>
+      				</div>
+  			</div>		
+		</div>
+	</div>	
+	</div>
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="http://code.jquery.com/jquery-latest.min.js"></script>
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.11.1/themes/smoothness/jquery-ui.css">
+	<script src="//code.jquery.com/jquery-1.10.2.js"></script>
+	<script src="//code.jquery.com/ui/1.11.1/jquery-ui.js"></script>
+	<script>
+
+	$('#send-status').click(function(){
+		socket.emit('status send', $('#status-value').val(), "<%= user.user.firstname %>");
+		 $('#status-value').val('')	
+	});
+
+	socket.on('receive status', function(msg, name){
+		$('#statuses').append('<div>'+name+':'+msg+'</div>');
+	});
+	
+	socket.on('show notification',function(name){
+		$('#status-notification').fadeOut(800).fadeIn(800).fadeOut(400).fadeIn(400).fadeOut(400).fadeIn(400).fadeOut(400);
+		$('#status-notification').append('<div>' + name + ' has posted something</div>');	
+	});
+
+	$('#chat-anchor').click(function(){
+		$('#chat').fadeIn(800);	
+	});	
+	
+	$('#closebtn').click(function(){
+        	window.existingCall.close();
+        	step2();
+		$('#videochat-tab').fadeOut(1500);
+      	});
+	
+	// Compatibility shim
+    	navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+
+    	// PeerJS object
+    	var peer = new Peer({ key: 'lwjd5qra8257b9', debug: 3});
+
+    	peer.on('open', function(){
+     		$('#my-id').text(peer.id);
+    	});
+
+	// Receiving a call
+    	peer.on('call', function(call){
+       	// Answer the call automatically (instead of prompting user) for demo purposes
+		$('#videochat-tab').fadeIn(1500);
+       		call.answer(window.localStream);
+       		step3(call);
+    	});	
+	
+	peer.on('error', function(err){
+      		alert(err.message);
+      		// Return to step 2 if error occurs
+      		step2();
+    	});
+
+	// Click handlers setup
+   	$(function(){
+      		/*$('#make-call').click(function(){
+        		// Initiate a call!
+        		var call = peer.call($('#callto-id').val(), window.localStream);
+        		step3(call);
+      		});*/
+
+      		$('#end-call').click(function(){
+        		window.existingCall.close();
+        		step2();
+			$('#videochat-tab').fadeOut(1500);
+      		});
+
+      		// Retry if getUserMedia fails
+      		$('#step1-retry').click(function(){
+        		$('#step1-error').hide();
+        		step1();
+      		});
+
+      	// Get things started
+      		step1();
+    	});
+
+	function step1 () {
+      		// Get audio/video stream
+      		navigator.getUserMedia({audio: true, video: true}, function(stream){
+        	// Set your video displays
+        	$('#my-video').prop('src', URL.createObjectURL(stream));
+        	window.localStream = stream;
+        	step2();
+      		}, function(){ $('#step1-error').show(); });
+    	}
+
+    	function step2 () {
+      		$('#step1, #step3').hide();
+      		$('#step2').show();
+    	}
+
+    	function step3 (call) {
+      		// Hang up on an existing call if present
+      		if (window.existingCall) {
+        	window.existingCall.close();
+     	}
+
+	// Wait for stream on the call, then set peer video display
+      	call.on('stream', function(stream){
+        	$('#their-video').prop('src', URL.createObjectURL(stream));
+      	});
+
+	// UI stuff
+      	window.existingCall = call;
+      	call.on('close', step2);
+      	$('#step1, #step2').hide();
+      		$('#step3').show();
+    	}
+	$('#videochat-tab').hide();	
+
+	</script>
+</body>
+</html>

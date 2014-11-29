@@ -1,0 +1,39 @@
+<% include header.html %>
+
+<!--Navbar-->
+  <ul class="nav nav-tabs nav-justified" role="tablist">
+    <li class="active"><a href="/home">Home</a></li>
+    <li><a href="/profile">Profile</a></li>
+    <li><a href="/chat">Messages</a></li>
+  </ul>
+  <!--body-->
+  <div class="row">
+  <div class="col-md-2">
+    <div class="panel panel-default">
+  <div class="panel-heading"><a href="/home"><%= user.user.firstname %>&nbsp<%= user.user.lastname %></a></div>
+  <div class="panel-body">
+    <ul>
+    <li><a href="/profile1">Add Contact</a></li>
+    <li><a href="/gchat">Create Chat Group</a></li>
+  </ul>
+  </div>
+  <div class="panel-body">
+    
+  </div>
+</div>
+  </div>
+  <div class="col-md-8"></div>
+</div>
+<div class="col-md-2">
+<% include profile1.html %>
+</div>
+    
+    
+
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="js/bootstrap.min.js"></script>
+  </body>
+

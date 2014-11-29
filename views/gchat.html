@@ -1,0 +1,107 @@
+<% include header.html %>
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
+<script>
+	var socket = io.connect('http://localhost:8080');
+
+	// on connection to server, ask for user's name with an anonymous callback
+	socket.on('connect', function(){
+		// call the server-side function 'adduser' and send one parameter (value of prompt)
+		$('#name').click(function(){
+			socket.emit('adduser', $('#room').val(), "<%= user.user.firstname  %>");	
+		});
+	});
+	
+	// when a user joins the rooms
+	socket.on('join', function (username, data) {
+		$('#console').append('<i style="color:red;">' + username + ': ' + data + '</i><br>');
+	});
+	
+	// when user disconnects from a room
+	socket.on('disconect', function (username, data) {
+		$('#console').append('<i style="color:blue;">' + username + ': ' + data + '</i><br>');
+	});
+	
+	// when a user joins a room
+	socket.on('connected to room', function (username, data) {
+		$('#console').append('<i style="color:green;">' + username + ': ' + data + '</i><br>');
+	});
+	
+	// listener, whenever the server emits 'updatechat', this updates the chat body
+	socket.on('updatechat', function (username, data) {
+		$('#conversation').append('<b>' + username + ':</b> ' + data + '<br>');
+	});
+
+	// listener, whenever the server emits 'updaterooms', this updates the room the client is in
+	socket.on('updaterooms', function(rooms, current_room) {
+		$('#conversation').empty();
+		$('#rooms').empty();
+		$.each(rooms, function(key, value) {
+			if(value == current_room){
+				$('#rooms').append('<div>' + value + '</div>');
+			}
+			else {
+				$('#rooms').append('<div><a href="#" onclick="switchRoom(\''+value+'\')">' + value + '</a></div>');
+			}
+		});
+	});
+	
+	//when username already present
+	socket.on('not available', function(data){
+		$('#notavailable').append('<b>' + data.msg + '</b><br>');	
+	});
+
+	// function to switch between rooms
+	function switchRoom(room){
+		socket.emit('switchRoom', room);
+	}
+	
+	// on load of page
+	$(function(){
+		// when the client clicks SEND
+		$('#datasend').click( function() {
+			var message = $('#data').val();
+			$('#data').val('');
+			// tell server to execute 'sendchat' and send along one parameter
+			socket.emit('sendchat', message,"<%= user.user.firstname  %>");
+		});
+
+		// when the client hits ENTER on their keyboard
+		$('#data').keypress(function(e) {
+			if(e.which == 13) {
+				$(this).blur();
+				$('#datasend').focus().click();
+			}
+		});
+	});
+
+</script>
+<div id="notavailable"></div>
+<div class="col-md-3">
+	<div class="panel panel-default" style="height:300px;">
+		<div id="rooms" class="panel panel-default" style="height:200px;overflow-y:scroll;">
+			<b>ROOMS</b><br>
+		</div>
+		<div>
+			<input id="room" class="form-control" style="width:274px;  "></input>
+			<input type="button" id="name" value="add room" class="btn btn-primary"/>
+		</div>
+	</div>
+</div>
+</div>
+<div class="col-md-6">
+	<div class="panel panel-default" style="height:300px;">
+		<div class="panel panel-default" style="height:200px;overflow-y:scroll;">	
+			<div id="conversation"></div>
+		</div>
+		<div>
+			<input id="data" class="form-control" style="width:620px;" />
+			<input type="button" id="datasend" value="send" class="btn btn-primary"/>
+		</div>
+	</div>
+</div>
+<div class="col-md-3">
+	<div class="panel panel-default" style="height:300px;overflow-y:scroll;">	
+		<div id="console"></div>	
+	</div>
+</div>
