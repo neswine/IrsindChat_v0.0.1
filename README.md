@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 Node.js_UserLogin_Template
 ==========================
 
@@ -28,4 +28,3 @@ IrsindChat_v0.0.1
 =================
 
 Chat Using Node.js and mongodb
->>>>>>> d9c659dbc7876461027ffebad7e4b389881b1ca0
