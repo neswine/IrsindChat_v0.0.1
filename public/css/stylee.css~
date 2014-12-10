@@ -1,0 +1,67 @@
+@import url(http://fonts.googleapis.com/css?family=Exo:100,200,400);
+@import url(http://fonts.googleapis.com/css?family=Source+Sans+Pro:700,400,300);
+
+
+.col-boarder{
+      border: 1px solid #CCC;
+    }
+    .navbar {
+      margin-bottom: 0 !important;
+    } 
+    .users {
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      float: left;
+      margin: 15px;
+      width: 93.5%;
+    }
+    .User_name, .User_adr {
+      display: block;
+      padding: 5px;
+    }
+    .User_adr {
+      font-size: 100%;
+      padding-left: 7%;
+      color: #b0b0b0;
+    }
+    .User_name {
+      font-size: 150%;
+      font-weight: bold;
+      padding-left: 6%;
+    }
+    .users_row {
+      border: 1px solid #ccc;
+      margin: 4px;
+    }
+    .add_btn {
+      background-color: #2a70fa;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      color: #fff;
+      width: 20%;
+      left: 75%;
+      position: relative;
+      z-index: 1;
+      margin-bottom: 2%;
+    }
+    .user_thumb {
+      float: left;
+      width: 25%;
+    }
+    .user_thumb img{
+      border: 1px solid #e6e6e9;
+      margin: 5%;
+      width: 80%;
+    }
+    .user_dtls {
+      width: 75%;
+      float: left;;
+    }
+
+	.container{
+		float:left;
+		width:100%;
+		padding:10px;
+		
+	}
+	

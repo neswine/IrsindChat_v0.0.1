@@ -1,7 +1,289 @@
 <% include header.html %>
+<style>		
+		#their{
+			position:relative;
+    			width:200px; 
+			height:305px;
+			     		
+		}
+
+		#my-video{
+			position:relative;       
+     			width:30%;       
+     			border:2px solid blue;
+     			display:block;
+     			z-index:1;  	
+		}
+		
+		#videochat-tab {
+   			 top: 30%;
+    			left: 50%;
+    			width:30em;
+    			height:27em;
+    			margin-top: -9em; /*set to a negative number 1/2 of your height*/
+    			margin-left: -15em; /*set to a negative number 1/2 of your width*/
+    			border: 1px solid #ccc;
+    			background-color: #f3f3f3;
+    			position:fixed;
+			display:none;
+		}
+</style>
+<script type="text/javascript" src="http://cdn.peerjs.com/0.3/peer.min.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
 <script>
+	var peer = new Peer({ key: 'lwjd5qra8257b9', debug: 3});
+		//var peer = new Peer({ key: 'lwjd5qra8257b9', debug: 3});
+ 		var friendlist ={};
+		//connect to the port 8080
+  		var socket = io.connect('http://localhost:8080');
+		//sends the first name of the user that has to searched
+  		socket.on('connect', function(){
+			<% for(var i=0; i<friendss.length; i++) { %>
+				$('#pending-requests').append('<div id="add_friend">'+"<%= friendss[i] %>"+' has requested you to add.            <a href="/profile1" onclick="add_request(\''+ "<%= friendss[i] %>" +'\',\''+ "<%= user._id %>" +'\',\''+ "<%= user.user.firstname %>" +'\')">Add</a>                     <a href="#" onclick="delete_request(\''+ "<%= friendss[i] %>" +'\')">Cancel</a></div><br>');			
+			<% } %>
+			socket.emit('adduserr', "<%= user.user.firstname %>","<%= user._id %>");
+			//stores the value of friends list of the corresponding user into the hash friendlist
+			<% for(var i=0; i<friends.length; i++) { %>
+				var str ="<%= friends[i] %>"
+				friendlist[str] = str
+			<% } %>
+  		});
+
+		function add_request(friendname,userid, username){
+			socket.emit('add new friend', friendname, userid, username);
+			$('#add_friend').fadeOut(800);	
+		}
+			
+		function delete_request(friendname){
+			socket.emit('delete request', friendname,"<%= user._id %>","<%= user.user.firstname %>");
+			//$('#cancel_request').fadeOut(800);		
+		}	
+
+		//update the friends list after adding him
+  		socket.on('updateuserrs', function(data) {
+  			$('#users').empty();
+			var html = '<div style="background-color:#A8A8A8; height:30px; width:100%;padding:1px; border: 1px solid #404040 "><h4 style="font-family:Exo; color:black;" align="center">Friend List</h4></div> <ul><% for(var i=0; i<friends.length; i++) { %><li><a  style="font-family:Exo" href="#" >'
+    			$.each(data, function(key, value) {
+				var str = "<%= friends[i] %>";
+				if(key =="<%= friends[i] %>") {
+					if(html.indexOf(str) != -1){
+						html += ''
+					}else{
+						html += '<%= friends[i] %>'
+					}	
+   				}else{
+					if(html.indexOf(str) != -1){
+						html += ''
+					}else{
+						html += '<%= friends[i] %>'
+					}	
+				}
+			});
+			html +=  '</a></li><% } %> </ul>'
+			$('#users').append(html)
+  		});
+
+		jQuery.browser = {};
+		(function () {
+    			jQuery.browser.msie = false;
+    			jQuery.browser.version = 0;
+    			if (navigator.userAgent.match(/MSIE ([0-9]+)\./)) {
+        			jQuery.browser.msie = true;
+        			jQuery.browser.version = RegExp.$1;
+    			}
+		})();
+		
+		//for auto-complete search function
+		$(function () {
+  			$("#search-query").autocomplete({
+     				source: function (request, response) {
+         				$.ajax({
+           					url: "/search_member",
+            					type: "GET",
+            					data: request,  // request is the value of search input
+            					success: function (data) {
+              					// Map response values to fiedl label and value
+               						response($.map(data, function (el) {
+								socket.emit('search result', el.user.firstname,el.user.address);
+                  						return {
+                     							label: el.user.firstname+', '+el.user.address,
+                    							value: el._id
+                  						};
+                  					}));
+					}
+               				});
+            				
+         			},
+         
+         	// The minimum number of characters a user must type before a search is performed.
+         	minLength: 3, 
+         
+         	// set an onFocus event to show the result on input field when result is focused
+         	focus: function (event, ui) { 
+            		this.value = ui.item.label; 
+            	// Prevent other event from not being execute
+            		event.preventDefault();
+         	},
+         	select: function (event, ui) {
+            		// Prevent value from being put in the input:
+            		this.value = ui.item.label;
+            		// Set the id to the next input hidden field
+            		$(this).next("input").val(ui.item.value); 
+            		// Prevent other event from not being execute            
+            		event.preventDefault();
+            		// optionnal: submit the form after field has been filled up
+            		$('#quicksearch').submit();
+         	}
+	});
+
+	$('#search-query').keypress(function(e){
+		$('#search_result').empty();	
+	});	
+
+	});
+
+	
+
+	var peerid = {};
+	var friendsonline = {};
+	var socket = io.connect();
+
+
+
+
+	//sends the first name of the user that logins
+	socket.on('connect', function(){
+		peer.on('open', function(){	
+			socket.emit('names' , "<%= user.user.firstname %>", peer.id);
+		});
+	});
+
+	socket.on('peerid', function(data){
+		$.each(data, function(key, value){
+			peerid[key] = value;
+			//alert(peerid[key]);					
+		});
+	});
+	
+	//shows online friends from his friendlist
+	socket.on('friends', function(data){
+		$('#online').empty();
+		$.each(data, function(key ,value){
+			if(value in friendlist){
+				friendsonline[key] = value;
+				//alert(peerid[friendsonline[key]]);	
+				$('#online').append('<b><a align="left" href="#" onclick="switchName(\''+ friendsonline[key] + '\')">' + friendsonline[key] + '</a>      <a href="#" class="btn btn-info" onclick="nametotextbox(\''+ peerid[friendsonline[key]] +'\')" id="make-call" style="margin-right:.5rem">Video Call</a></b><br><a>__________________________________</a>');
+			}	
+		});
+	});
+
+
+
+	function nametotextbox(name){
+		$('#videochat-tab').fadeIn(1600);
+		$('#callto-id').val(name);
+       		// Initiate a call!
+       		var call = peer.call($('#callto-id').val(), window.localStream);
+        	step3(call);
+	}
+	
+	// function to generate pop-up and private chat when clicked online friend
+	function switchName(key){
+		socket.emit('get log data', "<%= user.user.firstname %>", key);	
+		switchname(key);
+	}
+	
+	function switchname(key){
+		var wId= "to_"+key;
+         	var privateDiv = document.getElementById('PrivateTab');
+                var privateBox = document.createElement('div');
+
+		$(privateBox).attr({
+   			'style': 'overflow-y:none;'
+  		});
+ 
+		var privateTitle = document.createElement('div');
+  		$(privateTitle).attr({
+   			'style': 'width:200px; position:fixed; background-color: #A8A8A8; color: black;',
+  		});
+  		$(privateTitle).append("Private: "+ key);
+  		privateBox.appendChild(privateTitle);
+		
+		var privateChatDiv = document.createElement('div');
+  		$(privateChatDiv).attr({
+				'style': "overflow-y:auto;",
+	   		'id': wId + "_text"
+		  });
+  		privateBox.appendChild(privateChatDiv);
+  
+  		var privateChat = document.createElement('div');
+  		$(privateChat).attr({
+	   		'id': wId + "_text"
+		  });
+  		privateChatDiv.appendChild(privateChat);
+  
+ 		var privateBreak = document.createElement('br');
+  		privateBox.appendChild(privateBreak);
+	
+		var privatediv = document.createElement('div');
+  		$(privatediv).attr({
+	   		'style': "position:fixed; float:bottom; bottom:0px;color:black;"
+		  });
+  		privateBox.appendChild(privatediv);
+  
+  		var privateText = document.createElement('input');
+  		$(privateText).attr({
+   			'id': wId + "_data",
+   			'type': "text"
+  		});
+  		privatediv.appendChild(privateText);
+  
+  		var privateSend = document.createElement('input');
+  		$(privateSend).attr({
+				
+   			'id': wId + "_send",
+   			'type': "button",
+   			'value': "Send"
+  		});
+  		privatediv.appendChild(privateSend);
+		privateBox.appendChild(privatediv);
+  
+  		$(privateBox).attr({
+   			'id': wId,
+   			'style': 'float: right; width: 220px; height: 200px; overflow-x: auto; border-radius: 6px; border: 1px #BBB solid;',
+  		});
+
+               	privateDiv.appendChild(privateBox);
+  
+  	       	$(privateSend).click(function(){
+   			 var messagetosend = $('#to_'+key+"_data").val();
+  			$('#to_'+key+"_text").append("<div class='bubble'><b>Me: </b>" + messagetosend + "</div>");
+			$('#to_'+key+"_text").val('');
+  			socket.emit('sendprivatechat',"<%= user.user.firstname %>", key, messagetosend);
+    	       });	
+	}
+	
+	//function for private message
+	socket.on('getprivatemsg', function(sender, key, message) {
+  		var elem = document.getElementById('to_'+sender+"_text");
+  		if(typeof(elem) != 'undefined' && elem != null){
+   
+  		}else{
+   			switchName(sender);
+  		}
+	
+  		var elem = document.getElementById('to_'+sender+"_text");
+  		$(elem).append('<div class="bubble bubble--alt">' + message + '</div>');
+        });
+
+	socket.on('get chat history', function(from, to, mesg){
+		var elem = document.getElementById('to_'+to+"_text");
+  		$(elem).append('<div>' + mesg + '</div>');
+	});
+
+	
+
 	var socket = io.connect('http://localhost:8080');
 
 	// on connection to server, ask for user's name with an anonymous callback
@@ -76,7 +358,31 @@
 	});
 
 </script>
-<div id="notavailable"></div>
+
+<div class="col-md-2" style="color:black; margin-left:30px; padding:10px; float:left; ">
+			<div style="border: 1px solid #e6e6e9;	">
+			<ul>
+			<li><img height="50" src="/image.png" name="userimage" id="userimage" alt="..." ></li>
+			<button class="btn btn-primary" data-toggle="modal" data-target="#edit">
+          <span class="glyphicon glyphicon-wrench" aria-hidden="true"></span>
+        </button>
+			</ul>
+			<ul>
+			<li><a style="font-family:'Exo', sans-serif" href="/home">Home</a></li>
+			</ul>
+			<ul>
+			<li><a style="font-family:'Exo', sans-serif" href="/profile">View My Profile</a></li>
+			</ul>
+			<ul>
+			<li><a style="font-family:'Exo', sans-serif" href="/videochat">Video Conference</a></li>
+			</ul>
+			</div>
+			<br>
+			<div style="margin-top:10px; height:420px; width:200px; position:fixed; border: 1px solid #A8A8A8;	color:black;">
+				<div class="box reminder" id="users"></div>
+			</div>
+		</div>
+<!--<div id="notavailable"></div>
 <div class="col-md-3">
 	<div class="panel panel-default" style="height:300px;">
 		<div id="rooms" class="panel panel-default" style="height:200px;overflow-y:scroll;">
@@ -87,21 +393,194 @@
 			<input type="button" id="name" value="add room" class="btn btn-primary"/>
 		</div>
 	</div>
+</div>-->
 </div>
-</div>
-<div class="col-md-6">
-	<div class="panel panel-default" style="height:300px;">
-		<div class="panel panel-default" style="height:200px;overflow-y:scroll;">	
-			<div id="conversation"></div>
-		</div>
-		<div>
-			<input id="data" class="form-control" style="width:620px;" />
-			<input type="button" id="datasend" value="send" class="btn btn-primary"/>
-		</div>
+<div class="col-md-4" style="color:black;margin-top:10px;">
+	<div class="panel panel-default" style="height:500px;">
+		<div id="conversation"></div>
+	</div>
+	<div>
+		<input id="data" class="form-control" style="width:405px;" />
+		<input type="button" id="datasend" value="send" class="btn btn-primary"/>
 	</div>
 </div>
-<div class="col-md-3">
-	<div class="panel panel-default" style="height:300px;overflow-y:scroll;">	
-		<div id="console"></div>	
+<div class="col-md-3" style="margin-top:10px;">
+	<div style="background-color:#A8A8A8; height:30px; width:100%;padding:1px; border: 1px solid #404040 ">
+				<h4 style="font-family:'Exo', sans-serif; color:black;" align="center"> Rooms </h4>
+			</div>
+		<div class="panel panel-default" style="overflow-y:scroll; position:relative;color:black;height:150px;">
+		<div id="rooms" ></div>
 	</div>
+	<div style="position:absolute;bottom:0px;width:290px;">
+		<input id="room" class="form-control" style="color:black; width:50%; "></input>
+		<input type="button" id="name" value="add room" style="50%"/>		
+		</div>
 </div>
+	<div  style="margin-top:5px;overflow-y:auto;">	
+		<div style="margin-top:5px;overflow-y:auto;overflow-x:hidden; width:240px;height:200px; border: 1px solid #A8A8A8;position:fixed;color:black; ">
+			<div style="background-color:#A8A8A8; height:30px; width:100%;padding:1px; border: 1px solid #404040 ">
+				<h4 style="font-family:'Exo', sans-serif; color:black;" align="center"> Console </h4>
+			</div>
+			<div id="console"></div>
+		</div>
+		<div style="margin-top:230px;overflow-y:auto;overflow-x:hidden; width:230px;height:355px; border: 1px solid #A8A8A8;position:fixed;color:black; ">
+			<div style="background-color:#A8A8A8; height:30px; width:100%;padding:1px; border: 1px solid #404040 ">
+				<h4 style="font-family:'Exo', sans-serif; color:black;" align="center"> Chats </h4>
+			</div>
+			<div id="online"></div>
+		</div>
+</div>
+
+		
+	
+	<div style="margin-left:250px; width:430px; margin-top:130px; color:black;" id="statuses"></div>	
+
+	<div style="overflow-y:none;position:fixed;bottom:0px; right:270px;z-index:10;" id="PrivateTab" >    </div>
+
+
+	<div id="videochat-tab">
+		<div class="panel panel-default" style="overflow-y:scroll; ">
+		<a href="#" id="closebtn" style="position:relative; align:left;" >x</a>
+			<ul id="con"></ul>
+  			<div class="pure-g">
+
+      		 Video area 
+      				<div class="pure-u-2-3" id="video-container">
+					<div id="their">
+        					<video id="their-video" autoplay></video>
+					</div>
+					<div id="my">
+        					<video id="my-video" muted="true" autoplay></video>
+					</div>
+      				</div>
+
+      				<!-- Steps -->
+      				<div class="pure-u-1-3">
+
+        			<!-- Get local audio/video stream -->
+        				<div id="step1">
+          					<p>Please click `allow` on the top of the screen so we can access your webcam and microphone for calls.</p>
+          					<div id="step1-error">
+            						<p>Failed to access the webcam and microphone. Make sure to run this demo on an http server and click allow when asked for permission by the browser.</p>
+            						<a href="#" class="pure-button pure-button-error" id="step1-retry">Try again</a>
+          					</div>
+        				</div>
+        				<!-- Make calls to others -->
+        				<div id="step2">
+          					<div class="pure-form">
+            						<input type="hidden" placeholder="Call user id..." id="callto-id">
+           						<a href="#" class="pure-button pure-button-success" id="make-call">Call</a>
+          					</div>
+        				</div>
+      				</div>
+  			</div>		
+		</div>
+	</div>	
+</div>
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="http://code.jquery.com/jquery-latest.min.js"></script>
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.11.1/themes/smoothness/jquery-ui.css">
+	<script src="//code.jquery.com/jquery-1.10.2.js"></script>
+	<script src="//code.jquery.com/ui/1.11.1/jquery-ui.js"></script>
+	<script>
+
+	
+	socket.on('show notification',function(name){
+		
+		$('#status-notification').fadeOut(800).fadeIn(200);
+		$('#status-notification').append('<div><p >' + name + ' has posted something</p><a>__________________________________</a></div>');
+		
+	});
+
+	$('#chat-anchor').click(function(){
+		$('#chat').fadeIn(800);	
+	});	
+	
+	$('#closebtn').click(function(){
+        	window.existingCall.close();
+        	step2();
+		$('#videochat-tab').fadeOut(1500);
+      	});
+	
+	// Compatibility shim
+    	navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+
+    	// PeerJS object
+    	var peer = new Peer({ key: 'lwjd5qra8257b9', debug: 3});
+
+    	peer.on('open', function(){
+     		$('#my-id').text(peer.id);
+    	});
+
+	// Receiving a call
+    	peer.on('call', function(call){
+       	// Answer the call automatically (instead of prompting user) for demo purposes
+		$('#videochat-tab').fadeIn(1500);
+       		call.answer(window.localStream);
+       		step3(call);
+    	});	
+	
+	peer.on('error', function(err){
+      		alert(err.message);
+      		// Return to step 2 if error occurs
+      		step2();
+    	});
+
+	// Click handlers setup
+   	$(function(){
+      		/*$('#make-call').click(function(){
+        		// Initiate a call!
+        		var call = peer.call($('#callto-id').val(), window.localStream);
+        		step3(call);
+      		});*/
+
+      		$('#end-call').click(function(){
+        		window.existingCall.close();
+        		step2();
+			$('#videochat-tab').fadeOut(1500);
+      		});
+
+      		// Retry if getUserMedia fails
+      		$('#step1-retry').click(function(){
+        		$('#step1-error').hide();
+        		step1();
+      		});
+
+      	// Get things started
+      		step1();
+    	});
+
+	function step1 () {
+      		// Get audio/video stream
+      		navigator.getUserMedia({audio: true, video: true}, function(stream){
+        	// Set your video displays
+        	$('#my-video').prop('src', URL.createObjectURL(stream));
+        	window.localStream = stream;
+        	step2();
+      		}, function(){ $('#step1-error').show(); });
+    	}
+
+    	function step2 () {
+      		$('#step1, #step3').hide();
+      		$('#step2').show();
+    	}
+
+    	function step3 (call) {
+      		// Hang up on an existing call if present
+      		if (window.existingCall) {
+        	window.existingCall.close();
+     	}
+
+	// Wait for stream on the call, then set peer video display
+      	call.on('stream', function(stream){
+        	$('#their-video').prop('src', URL.createObjectURL(stream));
+      	});
+
+	// UI stuff
+      	window.existingCall = call;
+      	call.on('close', step2);
+      	$('#step1, #step2').hide();
+      		$('#step3').show();
+    	}
+	$('#videochat-tab').hide();	
+</script>

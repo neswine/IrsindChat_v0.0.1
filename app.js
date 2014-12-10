@@ -23,8 +23,8 @@ mongoose.connect(configDB.url);
 require('./config/passport')(passport); 
 
 // Verify that the API Key and API Secret are defined
-var apiKey = '45085152',
-    apiSecret = 'ac67c542f5ba41ae21f16018721886f16733f986';
+var apiKey = '45104682',
+    apiSecret = 'ac1621e5c6c1ac900fb6528e39fd3b5954dd8c76';
 if (!apiKey || !apiSecret) {
   console.log('You must specify API_KEY and API_SECRET environment variables');
   process.exit(1);

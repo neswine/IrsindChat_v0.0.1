@@ -1,7 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-	<style>
+<html>
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <title>Random Login Form - CodePen</title>
+
+    <style>
 @import url(http://fonts.googleapis.com/css?family=Exo:100,200,400);
 @import url(http://fonts.googleapis.com/css?family=Source+Sans+Pro:700,400,300);
 
@@ -23,7 +29,7 @@ body{
 	bottom: -40px;
 	width: auto;
 	height: auto;
-	background-image:url(/images/ab1.jpg);
+	background-color: #561CA7;
 	background-size: cover;
 	-webkit-filter: blur(5px);
 	z-index: 0;
@@ -51,7 +57,7 @@ body{
 
 .header div{
 	float: left;
-	color: #549DB0;
+	color: #000;
 	font-family: 'Exo', sans-serif;
 	font-size: 35px;
 	font-weight: 200;
@@ -113,7 +119,6 @@ body{
 	margin-top: 10px;
 }
 
-
 .login input[type=submit]:hover{
 	opacity: 0.8;
 }
@@ -144,44 +149,32 @@ body{
    color: rgba(255,255,255,0.6);
 }
 </style>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Irisind Chat</title>
-    <!-- Bootstrap -->
-    <link href="css/bootstrap.min.css" rel="stylesheet">
-    <!-- BootstrapValidator CSS -->
-    <link rel="stylesheet" href="css/bootstrapValidator.min.css"/>
-	 
-  </head>
-  <body>
-  	<div class="body"></div>
+
+    <script src="js/prefixfree.min.js"></script>
+
+</head>
+
+<body>
+
+  <div class="body"></div>
 		<div class="grad"></div>
 		<div class="header">
 			<div>Irisind<span>Chat</span></div>
 		</div>
-	<div class="md-col-12">
-		  <h3>Login as existing user</h3>
-		  <form action="/login" method="post" class="box login">
-			
-			<% if (message.length > 0) { %>
-				<div class="alert alert-message"><%= message %></div>
-			<% } %>
-		
-			      <input type="text" name="username" placeholder="Enter Your User Name" required="required" class="form-control"/>
-			      <input type="password" name="password" placeholder="Password" required="required" class="form-control"/>
-					 <input type="submit" value="Login"></input><span class="clearfix"></span>
-					<a href="/signup" >Create an account</a>
-		</form>
-		
-	</div>
-	<div class="form-group">
-			<div align="center">
-			    
-			</div>
+		<br>
+		<div class="login">
+			<form action="/login" method="post" >
+				<input type="text" placeholder="username" name="username"><br>
+				<input type="password" placeholder="password" name="password"><br>
+				<input type="submit" value="Login">
+			</form>
+		<div class="grad">
+		 	<a href="/signup" >Create an account</a>
 		</div>
-	
-	<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-   
-    <!-- Include all compiled plugins (below), or include individual files as needed -->
-    <script src="js/bootstrap.min.js"></script>
+	</div>
+
+  <script src='http://codepen.io/assets/libs/fullpage/jquery.js'></script>
+
 </body>
+
 </html>

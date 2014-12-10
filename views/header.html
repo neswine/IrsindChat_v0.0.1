@@ -5,30 +5,39 @@
     		<title>Irisind Chat</title>
     		<!-- Bootstrap -->
     		<link href="css/bootstrap.min.css" rel="stylesheet">
+			<link href="css/stylee.css" rel="stylesheet">
+			<link href="css/style.css" rel="stylesheet">
+  			<link href="css/home.css" rel="stylesheet">
   	</head>
   	<body>
-    	<!--Header-->
-  		<div class="col-md-12" >
-			<div class="btn btn-info" style="margin-top:2rem;">
-	  			<a href="/profile1" style="float:left; margin-right:2rem">Home</a>
+<body style="background-color:#E8E8E8 ;">	
+	<nav class="navbar navbar-inverse" role="navigation" >
+  		<div class="container-fluid">
+			<div class="navbar-header">
+				<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+        			<span class="sr-only">Toggle navigation</span>
+        			<span class="icon-bar"></span>
+        			<span class="icon-bar"></span>
+        			<span class="icon-bar"></span>
+      		</button>
+	  			<a class="navbar-brand" href="/profile1" ><img height="30" src="images/home.png"></a>
 			</div>
-  			<img style="width:5%; margin-top:2rem; margin-right:2rem; psition:fixed" align="right" src="/image.png" name="userimage" id="userimage" alt="..." class="img-circle"></h1>
-			<div class="btn btn-info" style="float:right; margin-top:2rem; margin-right:2rem; psition:fixed">
-      				<a href="/profile" style="float:right; margin-right:2rem; psition:fixed "><%= user.user.firstname %>&nbsp<%= user.user.lastname %></a>
+			<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+				<form class="navbar-form navbar-left " style="width:40%; margin-left:25%;" role="search">
+      				<div class="input-group" style="width:100%">
+       					 <input type="text" id="srch_fld" placeholder="Search For People" class="form-control">
+				        <span class="input-group-btn">
+				          	<button class="btn btn-default" id="search_btn" type="button"> <span class="glyphicon glyphicon-search" aria-hidden="true"></span></button>
+				        </span>
+		      		</div><!-- /input-group -->
+		        </form>
+				<ul class="nav navbar-nav navbar-right">
+        			<li><a href="/profile"><img height="20" src="/image.png" name="userimage" id="userimage" alt="..." ></a></li>
+        			<li><a href="/profile" ><%= user.user.firstname %>&nbsp<%= user.user.lastname %></a></li>
+        			<li><a href="/logout"><span class="glyphicon glyphicon-log-out" aria-hidden="true"></span></a></li>
+      			</ul> 
 			</div>
-			<div class="btn btn-info" style="float:right; margin-right:2rem; margin-top:2rem;">      
-				<a href="/logout" >Sign Out</a>
-			</div>
-			
-    		</div>
-		<div class="panel panel-default" style="background-color:#D0C0D0;height:250px"> 
-			<div align="centre" style="position:relative; margin-top:4em;">   
-      				<a href="http://www.momentaint.com" style="position:relative; margin-left:26em;">
-					<img style="width:25%" src="images/momenta_logo.png">	
-				</a>
-  			</div>
 		</div>
-
-	</div>  
+	</nav>
 	</body>
 </html>

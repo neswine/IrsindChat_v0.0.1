@@ -3,9 +3,10 @@ var Friend  = require('../app/models/friend');
 var Friendrequest = require('../app/models/friendrequest');
 var Usersid = require('../app/models/usersid');
 var Newfriend = require('../app/models/newfriend');
+var Chat = require('../app/models/chatlog');
     async   = require("async");
-var path    = require('path'),
-    fs      = require('fs');
+var path    = require('path');
+var fs      = require("fs");
 
 module.exports = function(app, passport,server, opentok, apiKey) {
 	app.get('/', function(request, response) {
@@ -185,10 +186,53 @@ app.get('/videochat', function(req, res) {
 		  	});
 	});
 	
-app.get('/gchat' ,auth, function(req,res){
-		res.render('gchat.html',{
-			user : req.user
+app.get('/gchat' ,auth, function(request,response){
+		
+		var friendrequest = [];
+		var newfrienddetails = [];
+		
+		
+		var querys = Friendrequest.find({'friendrequest.mainfriendid': request.user._id});
+		querys.exec(function(err,friendss){
+			async.each(friendss, function(friend, callback){
+				friendrequest.push(friend.friendrequest.anotherfriendid);
+				callback();
+				}
+			);
+			
 		});
+
+		var query = Friend.find({'friend.mainfriendid': request.user._id}, { 'friend.anotherfriendid': 1 });
+		query.exec(function(err, friends) {
+		
+		if (!err) {
+			var frdDetails = []
+			async.each(friends,
+    			function(friend, callback){
+				if(friend.friend.anotherfriendid == ''){
+					console.log('No Friend')
+				}else{
+    					User.findById(friend.friend.anotherfriendid, function(err, user) {
+						frdDetails.push(user.user.firstname);
+ 						callback();
+					});
+   				}
+					
+  			},
+  			function(err){
+         			response.render('gchat.html', {
+					user : request.user,
+					friends: frdDetails,
+					friendss: friendrequest
+				});
+  			}
+		);
+       		} else {
+         		res.send(JSON.stringify(err), {
+            			'Content-Type': 'application/json'
+         		}, 404);
+      		}
+   		});
 	});
 		
 var usersonline  = {};
@@ -205,13 +249,46 @@ var peerid = {};
 
 io.sockets.on('connect', function(socket){
 
+	socket.on('user_search', function (search_text,limit){
+		var regex = new RegExp("^"+search_text,"i");
+		var query = User.find({'user.firstname' : regex}).skip(limit).limit(5);
+		var search_result = '';
+		var no_rows = 0;
+		var append = 0;
+		if(limit!=0){
+			append = 1;
+		}
+		User.count({'user.firstname' : regex}, function(err, c){
+	 		no_rows = c;
+		});
+		query.exec(function(err,result){
+			if(!err && result!='' && result!='null') {
+				async.each(result,
+				function(usr, callback) {
+					if (usr != "" && usr != "null") {
+						search_result = search_result + '<div class="users"><div class="user_thumb"><img src="/img/img.png"></div><div class="user_dtls"><span id="more_details" class="User_name">'+usr.user.firstname+' '+usr.user.lastname+'</span><span  class="Usr_name">Username : '+usr.user.username+'</span><span class="User_adr">Address : '+usr.user.address+'</span><div id="add_details" style="display:none;" ><span class="User_adr">Email : '+usr.user.email+'</span><span class="User_adr">City : '+usr.user.city+'</span><span class="User_adr">State : '+usr.user.state+'</span><span class="User_adr">Country : '+usr.user.country+'</span></div><button class="add_btn">Add</button></div></div>';
+						callback();
+					}
+				});
+			} else {
+				search_result ='<div class="no_rst_fnd"><span>No Results Found</span></div>';
+			}
+		if(no_rows>5 && no_rows>(limit+5)) {
+			limit= limit+5;
+			search_result = search_result +'<span id="view_more" onClick="view_more_results(\''+search_text+'\',\''+limit+'\');" class="view_more">View More...</span>';
+		}
+		socket.emit('search_results', search_result,append);                                    
+		});                                       
+	});
+	
+
 	socket.on('search result', function(name, add){
 		//console.log(name, add);
 		socket.emit('search result', name, add);
 	});
 
-	socket.on('friend request', function(myid, friendname, friendadd, username){
-		
+	
+	socket.on('friend request', function(myid,friendname,friendadd,myname){
 		var client_socket = usersocketss[friendname];
 		if(client_socket == null){
 			var querys = Usersid.findOne({'userid.username': friendname});
@@ -221,7 +298,7 @@ io.sockets.on('connect', function(socket){
 					if(friendreq == ''){
 						var newrequest = Friendrequest();
 						newrequest.friendrequest.mainfriendid = friendid.userid.userid;
-						newrequest.friendrequest.anotherfriendid = username;
+						newrequest.friendrequest.anotherfriendid = myname;
 						newrequest.save();
 					} else {	
 						async.each(friendreq, function(friend,callback){				
@@ -230,17 +307,73 @@ io.sockets.on('connect', function(socket){
 							} else {
 								var newrequest = Friendrequest();
 								newrequest.friendrequest.mainfriendid = friendid.userid.userid;
-								newrequest.friendrequest.anotherfriendid = username;
+								newrequest.friendrequest.anotherfriendid = myname;
 								newrequest.save();					
 							}
 						});					
 					}			
 				});	
 			});			
-		}
-		else{
-			client_socket.emit('friend request', friendname, friendadd, username);		
-		}	
+		} else {
+			var querys = Usersid.findOne({'userid.username':friendname});
+			querys.exec(function(err, usrid){
+				var query = Friendrequest.find({'friendrequest.mainfriendid':myid});
+				query.exec(function(err,frndrqst){
+					console.log(frndrqst);
+					if(frndrqst == ''){
+						//console.log('1');
+						var queryfrnd = Friendrequest.find({'friendrequest.mainfriendid':usrid.userid.userid}); 		
+						queryfrnd.exec(function(err,frndrqsts){
+							if(frndrqsts == ''){
+								var request = new Friendrequest();
+								request.friendrequest.mainfriendid = usrid.userid.userid;
+								request.friendrequest.anotherfriendid = myname;
+								request.save(); 
+								client_socket.emit('friend request',friendname, friendadd, myname);
+							} else { 
+							async.each(frndrqsts, function(frnd,callback){
+								if(frnd.friendrequest.anotherfriendid == myname){
+									console.log('request already present');
+								} else {
+									var searchfrnd = Friend.findOne({$and:[{'friend.mainfriendid':myid},{'friend.anotherfriendid':usrid.userid.userid}]});
+									searchfrnd.exec(function(err, result){
+										if(result == ''){
+											var requset = new Friendrequest();
+											request.friendrequest.mainfriendid = usrid.userid.userid;
+											request.friendrequest.anotherfriendid = myid;
+											request.save(); 
+											client_socket.emit('friend request',friendname, friendadd, myname);
+										} else {
+											console.log('already a friend. No need to send anymore request');
+										}									
+									});
+								}
+							});
+							}						
+						});	
+					} else {
+							async.each(frndrqst, function(frnd, callback){
+								if((frnd.friendrequest.anotherfriendid == friendname)||((frnd.friendrequest.mainfriendid == usrid.userid.userid)&&(frnd.friendrequest.anotherfriendid == myname))){
+									console.log('req already present');
+								} else {
+									var frndsrchquery = Friend.findOne({$and:[{'friend.mainfriendid':myid},{'friend.anotherfriendid':usrid.userid.userid}]});
+									frndsrchquery.exec(function(err,frndsrch){
+										if(frndsrch == ''){
+											var requset = new Friendrequest();
+											request.friendrequest.mainfriendid = usrid.userid.userid;
+											request.friendrequest.anotherfriendid = myid;
+											request.save(); 
+											client_socket.emit('friend request',friendname, friendadd, myname);
+										} else {
+											console.log('already a friend. No need to send anymore request');
+										}				
+									});
+								}							
+							});				
+					}			
+				});			
+			});			
+			}	
 	});
 
 	// Add a new room to the available list
@@ -313,7 +446,7 @@ io.sockets.on('connect', function(socket){
 				user.userid.username = data;
 				user.save();
 			} else if(useridsearch.userid.userid == id){
-				console.log('already present');
+				//console.log('already present');
 			} else {		
 				var user = Usersid();
 				user.userid.userid = id;
@@ -347,7 +480,9 @@ io.sockets.on('connect', function(socket){
 					var newfriends = Friend();
 					newfriends.friend.mainfriendid = friendid.userid.userid;
 					newfriends.friend.anotherfriendid = userid;
-					newfriends.save();					
+					newfriends.save();
+					socket.emit('reload',friendname);
+					
 				} else {
 					async.each(friendlist,function(friend,callback){
 						if(friend.friend.anotherfriendid == friendid.userid.userid){	
@@ -361,7 +496,8 @@ io.sockets.on('connect', function(socket){
 							var newfriends = Friend();
 							newfriends.friend.mainfriendid = friendid.userid.userid;
 							newfriends.friend.anotherfriendid = userid;
-							newfriends.save();							
+							newfriends.save();
+							socket.emit('reload',friendname);						
 						}					
 					});
 				}				
@@ -370,7 +506,7 @@ io.sockets.on('connect', function(socket){
 			var deleterequest = Friendrequest.findOne({$and:[{'friendrequest.mainfriendid':userid},{'friendrequest.anotherfriendid':friendname}]});
 			deleterequest.exec(function(err,request){
 				request.remove();
-				console.log('request removed');			
+				console.log(request);			
 			});
 			
 		});
@@ -394,13 +530,36 @@ io.sockets.on('connect', function(socket){
 		io.sockets.emit('friends' , usernamed, data);
 		//console.log(peerid);
 	});
+
+	socket.on('get log data', function(from, to){
+		var query = Chat.find({$or:[{$and:[{'chat.from':from},{'chat.to':to}]},{$and:[{'chat.from':to},{'chat.to':from}]}]});
+		query.exec(function(err,chats){
+			async.each(chats, function(chat,callback){
+				if(chat.chat.from == from){
+					socket.emit('get chat history', from, to, "<b>Me:</b>: "+chat.chat.msg);
+				} else {
+					socket.emit('get chat history', from, to, "<b>"+from+"</b>: "+chat.chat.msg);	
+					}
+			});	
+		});
+	});
 		
 	// For sending private chat
-	socket.on('sendprivatechat', function(key, msg){
-  		var clientSocket = usersocketss[key];
+	socket.on('sendprivatechat', function(from, to, msg){
+  		var clientSocket = usersocketss[to];
   		if(clientSocket == null){
-  		}else{
-   			clientSocket.emit('getprivatemsg', socket.usernames, key, "<b>"+socket.usernames+"</b>: "+msg);
+			var chats = new Chat();
+			chats.chat.from = from;
+			chats.chat.to = to;
+			chats.chat.msg = msg;
+			chats.save();
+  		}else{	
+			var chat = new Chat();
+			chat.chat.from = from;
+			chat.chat.to = to;
+			chat.chat.msg = msg;
+			chat.save();
+   			clientSocket.emit('getprivatemsg', socket.usernames, to, "<b>"+socket.usernames+"</b>: "+msg);
   		}
  	});
 
